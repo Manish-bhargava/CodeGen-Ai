@@ -7,6 +7,7 @@ import AppHeader from "@/app/_components/AppHeader";
 import CodeEditor from "../_components.tsx/CodeEditor";
 import SelectionDetail from "../_components.tsx/SelectionDetail";
 import Skeleton from "../_components.tsx/Skeleton";
+
 export interface RECORD {
   id: number;
   description: string;
@@ -23,6 +24,7 @@ function ViewCode() {
   const [loading, setLoading] = useState(true);
   const [codeResp, setCodeResp] = useState(""); // Stores the code for the editor
   const [isReady, setIsReady] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false); // Prevent infinite updates
 
   // ✅ Function to generate code using the AI model
   const GenerateCode = async (record: RECORD) => {
@@ -37,10 +39,7 @@ function ViewCode() {
         }),
       });
 
-      if (!res.body) {
-        console.error("Error: Response body is empty.");
-        return;
-      }
+      if (!res.body) throw new Error("Error: Response body is empty.");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -65,26 +64,21 @@ function ViewCode() {
 
       // ✅ Check if `choices` exist
       if (!parsedResponse?.choices || parsedResponse.choices.length === 0) {
-        console.error("Error: AI did not return valid choices.");
-        return;
+        throw new Error("AI did not return valid choices.");
       }
 
       const generatedCode = parsedResponse.choices[0]?.message?.content || "";
 
       // ✅ Check if code is empty
       if (!generatedCode.trim()) {
-        console.error("Error: AI did not return valid code.");
-        return;
+        throw new Error("AI did not return valid code.");
       }
 
       // ✅ Remove markdown syntax (```tsx, ```jsx, etc.)
       const cleanedCode = generatedCode.replace(/```[a-z]*\n?/g, "").replace(/```/g, "").trim();
 
       // ✅ Update state with generated code
-      setData((prevData) => ({
-        ...prevData!,
-        code: cleanedCode,
-      }));
+      setData((prevData) => (prevData ? { ...prevData, code: cleanedCode } : prevData));
       setCodeResp(cleanedCode);
     } catch (error) {
       console.error("Error generating code:", error);
@@ -95,6 +89,8 @@ function ViewCode() {
   const GetRecordInfo = async () => {
     setIsReady(false);
     setCodeResp("");
+    setLoading(true);
+
     try {
       const result = await axios.get(`/api/wireframe-to-code/?uid=${uid}`);
       if (result.data?.error) {
@@ -117,28 +113,29 @@ function ViewCode() {
     }
   };
 
-  // ✅ Fixed: Function to update the database
+  // ✅ Fixed: Function to update the database (Prevents infinite API calls)
   useEffect(() => {
-    if (data?.uid && codeResp) {
-      console.log("uid is ",data.uid);
-      console.log("code resp is ",codeResp);
+    if (data?.uid && codeResp && !isUpdating) {
+      setIsUpdating(true); // Prevents multiple API calls
       const UpdateCodeToDb = async () => {
         console.log("Updating DB with:", { uid: data.uid, code: codeResp });
-        
+
         try {
           const result = await axios.put(
             "/api/wireframe-to-code",
-            { uid: data?.uid, code: codeResp || "// No code available" },
+            { uid: data.uid, code: codeResp || "// No code available" },
             { headers: { "Content-Type": "application/json" } }
           );
           console.log("Code updated successfully:", result.data);
         } catch (error: any) {
           console.error("Error updating code in DB:", error.response?.data || error.message);
+        } finally {
+          setIsUpdating(false); // Allow further updates
         }
       };
       UpdateCodeToDb();
     }
-  }, [codeResp,data?.uid]); // Runs only when `codeResp` updates// Runs only when `codeResp` updates
+  }, [codeResp, data?.uid]); // Runs only when `codeResp` updates
 
   // ✅ Fetch record when `uid` changes
   useEffect(() => {
@@ -156,11 +153,7 @@ function ViewCode() {
 
         {/* CodeEditor should take 4 columns */}
         <div className="md:col-span-4">
-          {isReady ? (
-            <CodeEditor codeResp={codeResp} setCodeResp={setCodeResp} isReady={isReady} />
-          ) : (
-            <Skeleton/>
-          )}
+          {isReady ? <CodeEditor codeResp={codeResp} setCodeResp={setCodeResp} isReady={isReady} /> : <Skeleton />}
         </div>
       </div>
     </div>
