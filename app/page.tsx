@@ -16,7 +16,7 @@ export default function Home() {
   return (
     <div>
       <header className="flex  flex-wrap sm:justify-start  sm:flex-nowrap z-50 w-full bg-white border-b border-gray-200 text-sm py-3 sm:py-0 dark:bg-neutral-800 dark:border-neutral-700">
-        <nav className="relative  p-4 max-w-[85rem] w-full mx-auto px-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8" aria-label="Global">
+        <nav className="relative flex  p-4 max-w-[85rem] w-full mx-auto px-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8" aria-label="Global">
           <div className="flex items-center justify-between">
             {/* <a className="flex-none text-xl font-semibold dark:text-white" href="#" aria-label="Brand">Brand</a> */}
             <div className="w-max">
@@ -26,8 +26,8 @@ export default function Home() {
               {/* </button> */}
             </div>
           </div>
-          <div id="navbar-collapse-with-animation" className="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow sm:block">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:ps-7">
+          <div id="navbar-collapse-with-animation" className="hs-collapse b flex overflow-hidden transition-all duration-300 basis-full grow sm:block">
+            <div className="flex flex sm:flex-row sm:items-center sm:justify-end sm:ps-7">
 
               {!user?.user?.email ? <Authentication>
                 <div className="flex items-center gap-x-2 font-medium text-gray-500 hover:text-blue-600 sm:border-s sm:border-gray-300 py-2 sm:py-0 sm:ms-4 sm:my-6 sm:ps-6 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-blue-500" >
